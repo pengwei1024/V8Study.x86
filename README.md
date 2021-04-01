@@ -1,5 +1,5 @@
 # V8Study.x86
-MAC下编译和运行 V8的例子
+MAC下编译和运行 V8的例子, v8版本: version=9.1.0 (candidate)
 
 ### V8编译脚本 args.gn
 ```

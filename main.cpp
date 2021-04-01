@@ -10,7 +10,7 @@ int main(int argc, char* argv[]) {
     std::unique_ptr<v8::Platform> platform = v8::platform::NewDefaultPlatform();
     v8::V8::InitializePlatform(platform.get());
     v8::V8::Initialize();
-
+    printf("version=%s\n", v8::V8::GetVersion());
     // Create a new Isolate and make it the current one.
     v8::Isolate::CreateParams create_params;
     create_params.array_buffer_allocator =
