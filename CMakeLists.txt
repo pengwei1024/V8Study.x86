@@ -9,7 +9,7 @@ INCLUDE_DIRECTORIES(
         lib/v8/include
         )
 
-add_executable(V8Study_x86_ main.cpp)
+add_executable(V8Study_x86_ main.cpp V8Engine.cpp)
 
 MESSAGE( STATUS "SOURCE_DIR = ${PROJECT_SOURCE_DIR}.")
 
