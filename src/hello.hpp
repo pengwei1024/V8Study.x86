@@ -1,6 +1,6 @@
 #include <iostream>
-#include "lib/v8/include/v8.h"
-#include "lib/v8/include/libplatform/libplatform.h"
+#include "v8.h"
+#include "libplatform/libplatform.h"
 
 /**
  * 官方简单的 V8 例子，执行字符串想加，并输出结果

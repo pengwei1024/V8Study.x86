@@ -6,7 +6,7 @@
 #define V8STUDY_X86__V8ENGINE_H
 
 #include <v8.h>
-#include "lib/v8/include/libplatform/libplatform.h"
+#include "libplatform/libplatform.h"
 
 
 class V8Engine {
