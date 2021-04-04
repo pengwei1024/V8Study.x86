@@ -7,6 +7,7 @@
 
 V8Engine::V8Engine() {
     v8::V8::InitializeICU();
+    v8::V8::InitializeExternalStartupData(__FILE__);
     platform = v8::platform::NewDefaultPlatform();
     v8::V8::InitializePlatform(platform.get());
     v8::V8::Initialize();

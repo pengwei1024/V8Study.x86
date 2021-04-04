@@ -9,8 +9,7 @@
 extern void say_hello(char* argv[]) {
     // Initialize V8.
     v8::V8::InitializeICUDefaultLocation(argv[0]);
-//    v8::V8::InitializeICU();
-    v8::V8::InitializeExternalStartupData(argv[0]);
+    v8::V8::InitializeExternalStartupData(__FILE__);
     std::unique_ptr<v8::Platform> platform = v8::platform::NewDefaultPlatform();
     v8::V8::InitializePlatform(platform.get());
     v8::V8::Initialize();
