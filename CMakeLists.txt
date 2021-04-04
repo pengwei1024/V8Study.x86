@@ -1,9 +1,15 @@
 cmake_minimum_required(VERSION 3.17)
 project(V8Study_x86_)
 set(CMAKE_CXX_STANDARD 11)
+set(CMAKE_BUILD_TYPE "Debug")
 # 不设置报错如下: Embedder-vs-V8 build configuration mismatch.
 # On embedder side pointer compression is DISABLED while on V8 side it's ENABLED.
 add_compile_options(-DV8_COMPRESS_POINTERS)
+
+#add_compile_options(
+#        "-Wall" "-Wpedantic" "-Wextra" "-fexceptions"
+#        "$<$<CONFIG:DEBUG>:-O0;-g3;-ggdb>"
+#)
 
 INCLUDE_DIRECTORIES(
         lib/v8/include
@@ -15,9 +21,10 @@ MESSAGE(STATUS "SOURCE_DIR = ${PROJECT_SOURCE_DIR}.")
 
 find_library(zlib z)
 #是否启用 snapshot 功能 ON 开启 /  OFF 关闭
-set(ENABLE_SNAPSHOT ON)
+#set(ENABLE_SNAPSHOT ON)
 
 if (ENABLE_SNAPSHOT)
+    MESSAGE(STATUS "### ENABLE_SNAPSHOT!!!")
     target_link_libraries(
             V8Study_x86_
             ${zlib}
@@ -41,6 +48,7 @@ if (ENABLE_SNAPSHOT)
             ${PROJECT_SOURCE_DIR}/lib/v8/platform/mac/snapshot/libv8_base_without_compiler.a
     )
 else ()
+    MESSAGE(STATUS "$$$ DISABLE_SNAPSHOT!!!")
     target_link_libraries(
             V8Study_x86_
             ${zlib}

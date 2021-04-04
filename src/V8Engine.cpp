@@ -18,11 +18,11 @@ V8Engine::V8Engine() {
 }
 
 V8Engine::~V8Engine() {
-    printf("~V8Engine\n");
 //    isolate->Dispose();
 //    v8::V8::Dispose();
 //    v8::V8::ShutdownPlatform();
 //    delete this->create_params.array_buffer_allocator;
+    printf("~V8Engine\n");
 }
 
 bool V8Engine::runScript(const std::string &js, v8::Local<v8::Value>& result) const {
