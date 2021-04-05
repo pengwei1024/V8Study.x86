@@ -7,6 +7,8 @@
 
 
 class V8Snapshot {
+    std::unique_ptr<v8::Platform> platform;
+    v8::Isolate::CreateParams createParams;
 public:
     /**
      * V8 生成 snapshot
@@ -19,7 +21,7 @@ public:
      * @param data snapshot data
      * @param createPlatform 是否创建 Platform
      */
-    void restoreSnapshot(v8::StartupData data, bool createPlatform = true);
+    void restoreSnapshot(v8::StartupData &data, bool createPlatform = true);
 
     /**
      * 将 StartupData 写入文件
@@ -27,7 +29,7 @@ public:
      */
     void writeFile(v8::StartupData data);
 
-    v8::StartupData readFile();
+    void readFile(v8::StartupData & data);
 };
 
 

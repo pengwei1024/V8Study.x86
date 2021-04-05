@@ -15,13 +15,13 @@ int main(int argc, char *argv[]) {
 //    printf("runScript result = %s\n", *utf8);
 
 
-    bool write = true;
+    bool write = !true;
     V8Snapshot v8Snapshot;
     v8::StartupData data{nullptr, 0};
     if (write) {
         data = v8Snapshot.makeSnapshot();
     } else {
-        data = v8Snapshot.readFile();
+        v8Snapshot.readFile(data);
     }
     printf("raw_size =%d, IsValid=%d, CanBeRehashed=%d\n", data.raw_size, data.IsValid(), data.CanBeRehashed());
     if (write) {

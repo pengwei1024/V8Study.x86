@@ -49,12 +49,20 @@ if (ENABLE_SNAPSHOT)
     )
 else ()
     MESSAGE(STATUS "$$$ DISABLE_SNAPSHOT!!!")
-    target_link_libraries(
-            V8Study_x86_
-            ${zlib}
-            ${PROJECT_SOURCE_DIR}/lib/v8/platform/mac/libv8_monolith.a
-
-    )
+#    优先读取根目录下的 libv8_monolith.a
+    if (EXISTS "${PROJECT_SOURCE_DIR}/libv8_monolith.a")
+        target_link_libraries(
+                V8Study_x86_
+                ${zlib}
+                ${PROJECT_SOURCE_DIR}/libv8_monolith.a
+        )
+    else()
+        target_link_libraries(
+                V8Study_x86_
+                ${zlib}
+                ${PROJECT_SOURCE_DIR}/lib/v8/platform/mac/libv8_monolith.a
+        )
+    endif ()
 endif ()
 
 

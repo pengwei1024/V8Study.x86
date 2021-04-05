@@ -1,5 +1,6 @@
 //
 // Created by Peng,Wei(BAMRD) on 2021/4/2.
+// https://github.com/tosone/bundleNode/blob/aaf04fd200a56f3f5b60c1c691877c192c6448af/deps/v8/src/startup-data-util.cc
 //
 
 #include <v8.h>
@@ -44,7 +45,7 @@ v8::StartupData V8Snapshot::makeSnapshot() {
         {
             v8::Local<v8::String> source =
                     v8::String::NewFromUtf8(v8Engine.isolate,
-                                            "function add(a,b) {return a+b;}add(0.1,0.3);").ToLocalChecked();
+                                            "function add(a,b) {return a+b;}var kk='##@';add(0.1,0.2)").ToLocalChecked();
             v8::Local<v8::Script> script =
                     v8::Script::Compile(context, source).ToLocalChecked();
             v8::Local<v8::Value> result = script->Run(context).ToLocalChecked();
@@ -55,7 +56,7 @@ v8::StartupData V8Snapshot::makeSnapshot() {
             creator.SetDefaultContext(context);
         }
     }
-    data = creator.CreateBlob(v8::SnapshotCreator::FunctionCodeHandling::kKeep);
+    data = creator.CreateBlob(v8::SnapshotCreator::FunctionCodeHandling::kClear);
     // 立即从 snapshot 恢复 context
     restoreSnapshot(data, false);
     return data;
@@ -84,26 +85,30 @@ int32_t createDirectory(const std::string &directoryPath) {
     return 0;
 }
 
-void V8Snapshot::restoreSnapshot(v8::StartupData data, const bool createPlatform) {
+void V8Snapshot::restoreSnapshot(v8::StartupData& data, const bool createPlatform) {
     if (createPlatform) {
         v8::V8::InitializeICU();
-        std::unique_ptr<v8::Platform> platform = v8::platform::NewDefaultPlatform();
+        v8::V8::InitializeExternalStartupDataFromFile(__FILE__);
+        platform = v8::platform::NewDefaultPlatform();
         v8::V8::InitializePlatform(platform.get());
         v8::V8::Initialize();
         printf("version=%s\n", v8::V8::GetVersion());
     }
     // Create a new Isolate and make it the current one.
-    v8::Isolate::CreateParams create_params;
-    create_params.array_buffer_allocator =
+    createParams = v8::Isolate::CreateParams();
+    createParams.array_buffer_allocator =
             v8::ArrayBuffer::Allocator::NewDefaultAllocator();
-    create_params.snapshot_blob = &data;
-    v8::Isolate* isolate = v8::Isolate::New(create_params);
+    createParams.snapshot_blob = &data;
+    printf("v8::Isolate::New start -------\n");
+    v8::Isolate* isolate = v8::Isolate::New(createParams);
+    printf("v8::Isolate::New end ----------\n");
     {
         v8::HandleScope handle_scope(isolate);
         // Create a new context.
-//        v8::Local<v8::Context> context = v8::Context::New(isolate);
-
-        v8::Local<v8::Context> context = v8::Context::FromSnapshot(isolate, 0).ToLocalChecked();
+        printf("v8::Isolate::create context\n");
+        v8::Local<v8::Context> context = v8::Context::New(isolate);
+//        v8::Local<v8::Context> context = v8::Context::FromSnapshot(isolate, 0).ToLocalChecked();
+        printf("v8::Isolate::create context2\n");
         // Enter the context for compiling and running the hello world script.
         v8::Context::Scope context_scope(context);
         {
@@ -119,6 +124,12 @@ void V8Snapshot::restoreSnapshot(v8::StartupData data, const bool createPlatform
             printf("restore add() = %s\n", *utf8);
         }
     }
+    if (createPlatform) {
+        isolate->Dispose();
+        v8::V8::Dispose();
+        v8::V8::ShutdownPlatform();
+        delete createParams.array_buffer_allocator;
+    }
 }
 
 
@@ -132,20 +143,22 @@ void V8Snapshot::writeFile(v8::StartupData data) {
     rewind(file);
     int writeSize = fwrite(data.data, data.raw_size, 1, file);
     printf("write size=%d\n", writeSize);
+    fclose(file);
 }
 
-v8::StartupData V8Snapshot::readFile() {
-    v8::StartupData data{nullptr, 0};
+void V8Snapshot::readFile(v8::StartupData &data) {
     char currentPath[MAX_PATH_LEN];
     getcwd(currentPath, MAX_PATH_LEN);
     printf("current path =%s\n", currentPath);
     std::string path = currentPath;
-    std::ifstream in(path + "/a.blob");
-    std::string contents((std::istreambuf_iterator<char>(in)),
-                         std::istreambuf_iterator<char>());
-    data.raw_size = contents.size();
-    data.data = contents.c_str();
-    printf("readFile ## raw_size =%d, IsValid=%d, CanBeRehashed=%d\n",
-           data.raw_size, data.IsValid(), data.CanBeRehashed());
-    return data;
+    FILE* file = fopen((path + "/a.blob").c_str(), "rb");
+    fseek(file, 0, SEEK_END);
+    data.raw_size = static_cast<int>(ftell(file));
+    rewind(file);
+    data.data = new char[data.raw_size];
+    int read_size = static_cast<int>(fread(const_cast<char*>(data.data),
+                                           1, data.raw_size, file));
+    fclose(file);
+    printf("readFile ## raw_size =%d, IsValid=%d, CanBeRehashed=%d, read_size=%d\n",
+           data.raw_size, data.IsValid(), data.CanBeRehashed(), read_size);
 }
