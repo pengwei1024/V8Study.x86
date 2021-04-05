@@ -23,7 +23,9 @@ symbol_level = 1
 本项目提供了两种静态库，都是 X64架构，例如 `lib/v8/platform/mac`下
 - libv8_monolith.a 是独立包含全部的静态库，没有开启 v8_use_external_startup_data
 - snapshot 文件夹是 开启v8_use_external_startup_data && 关闭 v8_monolithic 后的产物，开启了这个就不支持 v8_monolithic属性， 迷之操作~
-编译这个还有一个 zlib 的坑，报错如下：
+
+## 遇到的坑
+####  运行时找不到 zlib, 报错如下：
 ```
   "_Cr_z_adler32_simd_", referenced from:
       _Cr_z_adler32_z in libchrome_zlib.a(adler32.o)
@@ -51,3 +53,11 @@ symbol_level = 1
 #endif
 ```
 `chromeconf.h` 里面把 zlib 的函数都加了一个前缀 `Cr_z_`, 导致运行时找不到函数，我是通过增加`CHROMIUM_ZLIB_NO_CHROMECONF`宏定义绕过了这个问题
+
+#### 卡死在 CreateBlob 方法，不成功也不报错
+通过打日志发现是卡在 api.cc 
+```c++
+isolate->heap()->CollectAllAvailableGarbage(
+  i::GarbageCollectionReason::kSnapshotCreator);
+```
+没办法，把 api.cc 里面的这行代码注释掉就可以运行成功
