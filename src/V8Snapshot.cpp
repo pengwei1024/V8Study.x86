@@ -6,6 +6,8 @@
 #include <v8.h>
 #include "V8Snapshot.h"
 #include "V8Engine.h"
+#include "GlobalObject.h"
+#include "Utils.hpp"
 
 #ifdef WIN32
 #include <io.h>
@@ -40,12 +42,16 @@ v8::StartupData V8Snapshot::makeSnapshot() {
     v8::SnapshotCreator creator(v8Engine.isolate);
     {
         v8::HandleScope scope(v8Engine.isolate);
-        v8::Local<v8::Context> context = v8::Context::New(v8Engine.isolate);
+        v8::Local<v8::ObjectTemplate> global = v8::ObjectTemplate::New(v8Engine.isolate);
+        global->SetAccessor(String::NewFromUtf8(v8Engine.isolate, "x").ToLocalChecked(), GlobalObject::XGetter,
+                            GlobalObject::XSetter);
+        global->Set(v8Engine.isolate, "version", v8::FunctionTemplate::New(v8Engine.isolate, GlobalObject::Version));
+        v8::Local<v8::Context> context = v8::Context::New(v8Engine.isolate, nullptr, global);
         v8::Context::Scope context_scope(context);
         {
             v8::Local<v8::String> source =
                     v8::String::NewFromUtf8(v8Engine.isolate,
-                                            "function add(a,b) {return a+b;}var kk='##@';add(0.1,0.2)").ToLocalChecked();
+                                            "x++;function add(a,b) {return a+b;}var kk='##@';(typeof version === 'function'? version(): 'None')+ add(0.1,x);").ToLocalChecked();
             v8::Local<v8::Script> script =
                     v8::Script::Compile(context, source).ToLocalChecked();
             v8::Local<v8::Value> result = script->Run(context).ToLocalChecked();
@@ -56,9 +62,9 @@ v8::StartupData V8Snapshot::makeSnapshot() {
             creator.SetDefaultContext(context);
         }
     }
-    data = creator.CreateBlob(v8::SnapshotCreator::FunctionCodeHandling::kClear);
+    data = creator.CreateBlob(v8::SnapshotCreator::FunctionCodeHandling::kKeep);
     // 立即从 snapshot 恢复 context
-    restoreSnapshot(data, false);
+//    restoreSnapshot(data, false);
     return data;
 }
 
@@ -85,7 +91,8 @@ int32_t createDirectory(const std::string &directoryPath) {
     return 0;
 }
 
-void V8Snapshot::restoreSnapshot(v8::StartupData& data, const bool createPlatform) {
+void V8Snapshot::restoreSnapshot(v8::StartupData &data, const bool createPlatform) {
+    printf("## restoreSnapshot ##\n");
     if (createPlatform) {
         v8::V8::InitializeICU();
         v8::V8::InitializeExternalStartupDataFromFile(__FILE__);
@@ -99,21 +106,18 @@ void V8Snapshot::restoreSnapshot(v8::StartupData& data, const bool createPlatfor
     createParams.array_buffer_allocator =
             v8::ArrayBuffer::Allocator::NewDefaultAllocator();
     createParams.snapshot_blob = &data;
-    printf("v8::Isolate::New start -------\n");
-    v8::Isolate* isolate = v8::Isolate::New(createParams);
-    printf("v8::Isolate::New end ----------\n");
+    v8::Isolate *isolate = v8::Isolate::New(createParams);
     {
         v8::HandleScope handle_scope(isolate);
         // Create a new context.
-        printf("v8::Isolate::create context\n");
         v8::Local<v8::Context> context = v8::Context::New(isolate);
 //        v8::Local<v8::Context> context = v8::Context::FromSnapshot(isolate, 0).ToLocalChecked();
-        printf("v8::Isolate::create context2\n");
         // Enter the context for compiling and running the hello world script.
         v8::Context::Scope context_scope(context);
         {
             v8::Local<v8::String> source =
-                    v8::String::NewFromUtf8Literal(isolate, "add(1,11)");
+                    v8::String::NewFromUtf8Literal(isolate,
+                                                   "typeof version === 'function'?version():'not found version()'");
             // Compile the source code.
             v8::Local<v8::Script> script =
                     v8::Script::Compile(context, source).ToLocalChecked();
@@ -151,12 +155,12 @@ void V8Snapshot::readFile(v8::StartupData &data) {
     getcwd(currentPath, MAX_PATH_LEN);
     printf("current path =%s\n", currentPath);
     std::string path = currentPath;
-    FILE* file = fopen((path + "/a.blob").c_str(), "rb");
+    FILE *file = fopen((path + "/a.blob").c_str(), "rb");
     fseek(file, 0, SEEK_END);
     data.raw_size = static_cast<int>(ftell(file));
     rewind(file);
     data.data = new char[data.raw_size];
-    int read_size = static_cast<int>(fread(const_cast<char*>(data.data),
+    int read_size = static_cast<int>(fread(const_cast<char *>(data.data),
                                            1, data.raw_size, file));
     fclose(file);
     printf("readFile ## raw_size =%d, IsValid=%d, CanBeRehashed=%d, read_size=%d\n",

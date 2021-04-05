@@ -17,6 +17,8 @@ public:
 
     v8::Isolate *isolate;
 
+    v8::Isolate::CreateParams create_params;
+
     /**
      * 执行 js 脚本
      * @param js js 脚本
@@ -25,7 +27,6 @@ public:
     bool runScript(const std::string &js, v8::Local<v8::Value>& result) const;
 
 private:
-    v8::Isolate::CreateParams create_params;
     std::unique_ptr<v8::Platform> platform;
 };
 

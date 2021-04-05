@@ -11,7 +11,10 @@ V8Engine::V8Engine() {
     platform = v8::platform::NewDefaultPlatform();
     v8::V8::InitializePlatform(platform.get());
     v8::V8::Initialize();
+    std::vector<intptr_t> external_references = {
+            reinterpret_cast<intptr_t>(nullptr)};
     this->create_params = v8::Isolate::CreateParams();
+    this->create_params.external_references = external_references.data();
     this->create_params.array_buffer_allocator =
             v8::ArrayBuffer::Allocator::NewDefaultAllocator();
     this->isolate = v8::Isolate::New(this->create_params);
