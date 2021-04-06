@@ -12,6 +12,7 @@
 class V8Engine {
 public:
     V8Engine();
+    V8Engine(std::vector<intptr_t> external_references);
 
     ~V8Engine();
 

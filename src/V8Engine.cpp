@@ -5,19 +5,21 @@
 
 #include "V8Engine.h"
 
-V8Engine::V8Engine() {
+V8Engine::V8Engine(std::vector<intptr_t> external_references) {
     v8::V8::InitializeICU();
     v8::V8::InitializeExternalStartupData(__FILE__);
     platform = v8::platform::NewDefaultPlatform();
     v8::V8::InitializePlatform(platform.get());
     v8::V8::Initialize();
-    std::vector<intptr_t> external_references = {
-            reinterpret_cast<intptr_t>(nullptr)};
     this->create_params = v8::Isolate::CreateParams();
     this->create_params.external_references = external_references.data();
     this->create_params.array_buffer_allocator =
             v8::ArrayBuffer::Allocator::NewDefaultAllocator();
     this->isolate = v8::Isolate::New(this->create_params);
+}
+
+V8Engine::V8Engine(): V8Engine({
+                                       reinterpret_cast<intptr_t>(nullptr)}) {
 }
 
 V8Engine::~V8Engine() {

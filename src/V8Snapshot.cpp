@@ -37,21 +37,26 @@
 using namespace v8;
 
 v8::StartupData V8Snapshot::makeSnapshot() {
-    V8Engine v8Engine;
+    std::vector<intptr_t> external_references;
+    external_references.reserve(1);
+    external_references.push_back((intptr_t) &GlobalObject::Version);
+    V8Engine v8Engine(external_references);
     v8::StartupData data{nullptr, 0};
-    v8::SnapshotCreator creator(v8Engine.isolate);
+    v8::SnapshotCreator creator(v8Engine.isolate, external_references.data(), nullptr);
     {
         v8::HandleScope scope(v8Engine.isolate);
         v8::Local<v8::ObjectTemplate> global = v8::ObjectTemplate::New(v8Engine.isolate);
-        global->SetAccessor(String::NewFromUtf8(v8Engine.isolate, "x").ToLocalChecked(), GlobalObject::XGetter,
-                            GlobalObject::XSetter);
-        global->Set(v8Engine.isolate, "version", v8::FunctionTemplate::New(v8Engine.isolate, GlobalObject::Version));
+//        global->SetAccessor(String::NewFromUtf8(v8Engine.isolate, "x").ToLocalChecked(), GlobalObject::XGetter,
+//                            GlobalObject::XSetter);
+        printf("GlobalObject::Version point=%p\n", &GlobalObject::Version);
+        Local<FunctionTemplate> fun = v8::FunctionTemplate::New(v8Engine.isolate, GlobalObject::Version);
+        global->Set(v8Engine.isolate, "version", fun);
         v8::Local<v8::Context> context = v8::Context::New(v8Engine.isolate, nullptr, global);
         v8::Context::Scope context_scope(context);
         {
             v8::Local<v8::String> source =
                     v8::String::NewFromUtf8(v8Engine.isolate,
-                                            "x++;function add(a,b) {return a+b;}var kk='##@';(typeof version === 'function'? version(): 'None')+ add(0.1,x);").ToLocalChecked();
+                                            "if(typeof x == 'undefined'){x = 0}x++;function add(a,b) {return a+b;}var kk='##@';(typeof version === 'function'? version(): 'None')+ add(0.1,x);").ToLocalChecked();
             v8::Local<v8::Script> script =
                     v8::Script::Compile(context, source).ToLocalChecked();
             v8::Local<v8::Value> result = script->Run(context).ToLocalChecked();
@@ -62,9 +67,9 @@ v8::StartupData V8Snapshot::makeSnapshot() {
             creator.SetDefaultContext(context);
         }
     }
-    data = creator.CreateBlob(v8::SnapshotCreator::FunctionCodeHandling::kKeep);
+    data = creator.CreateBlob(v8::SnapshotCreator::FunctionCodeHandling::kClear);
     // 立即从 snapshot 恢复 context
-//    restoreSnapshot(data, false);
+    restoreSnapshot(data, false);
     return data;
 }
 
@@ -106,6 +111,10 @@ void V8Snapshot::restoreSnapshot(v8::StartupData &data, const bool createPlatfor
     createParams.array_buffer_allocator =
             v8::ArrayBuffer::Allocator::NewDefaultAllocator();
     createParams.snapshot_blob = &data;
+    std::vector<intptr_t> external_references;
+    external_references.reserve(1);
+    external_references.push_back((intptr_t) &GlobalObject::Version);
+    createParams.external_references = external_references.data();
     v8::Isolate *isolate = v8::Isolate::New(createParams);
     {
         v8::HandleScope handle_scope(isolate);
