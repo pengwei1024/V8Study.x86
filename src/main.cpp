@@ -3,7 +3,7 @@
 #include "V8Engine.h"
 
 int main(int argc, char *argv[]) {
-//    say_hello(argv);
+    say_hello(argv);
 
 //    V8Engine v8Engine;
 //    v8::Local<v8::Value> result;
@@ -15,19 +15,19 @@ int main(int argc, char *argv[]) {
 //    printf("runScript result = %s\n", *utf8);
 
 
-    bool write = !true;
-    V8Snapshot v8Snapshot;
-    v8::StartupData data{nullptr, 0};
-    if (write) {
-        data = v8Snapshot.makeSnapshot();
-    } else {
-        v8Snapshot.readFile(data);
-    }
-    printf("raw_size =%d, IsValid=%d, CanBeRehashed=%d\n", data.raw_size, data.IsValid(), data.CanBeRehashed());
-    if (write) {
-        v8Snapshot.writeFile(data);
-    } else {
-        v8Snapshot.restoreSnapshot(data);
-    }
+//    bool write = !true;
+//    V8Snapshot v8Snapshot;
+//    v8::StartupData data{nullptr, 0};
+//    if (write) {
+//        data = v8Snapshot.makeSnapshot();
+//    } else {
+//        v8Snapshot.readFile(data);
+//    }
+//    printf("raw_size =%d, IsValid=%d, CanBeRehashed=%d\n", data.raw_size, data.IsValid(), data.CanBeRehashed());
+//    if (write) {
+//        v8Snapshot.writeFile(data);
+//    } else {
+//        v8Snapshot.restoreSnapshot(data);
+//    }
     return 0;
 }

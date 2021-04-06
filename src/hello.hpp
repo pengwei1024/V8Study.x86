@@ -1,4 +1,5 @@
 #include <iostream>
+#include <v8pp/module.hpp>
 #include "v8.h"
 #include "libplatform/libplatform.h"
 
@@ -21,12 +22,16 @@ extern void say_hello(char* argv[]) {
     v8::Isolate* isolate = v8::Isolate::New(create_params);
     {
         v8::Isolate::Scope isolate_scope(isolate);
-
         // Create a stack-allocated handle scope.
         v8::HandleScope handle_scope(isolate);
 
+
+        v8::Local<v8::ObjectTemplate> global = v8::ObjectTemplate::New(isolate);
+        v8pp::module myLib(isolate);
+        myLib.set_const("PI", 3.1415);
+//        global->Set(isolate,"myLib", myLib.new_instance());
         // Create a new context.
-        v8::Local<v8::Context> context = v8::Context::New(isolate);
+        v8::Local<v8::Context> context = v8::Context::New(isolate, nullptr, global);
 
         // Enter the context for compiling and running the hello world script.
         v8::Context::Scope context_scope(context);
