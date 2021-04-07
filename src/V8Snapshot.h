@@ -9,6 +9,8 @@
 class V8Snapshot {
     std::unique_ptr<v8::Platform> platform;
     v8::Isolate::CreateParams createParams;
+    // 创建绑定方法的指针数组
+    std::vector<intptr_t> createExtRef();
 public:
     /**
      * V8 生成 snapshot

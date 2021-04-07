@@ -37,17 +37,15 @@
 using namespace v8;
 
 v8::StartupData V8Snapshot::makeSnapshot() {
-    std::vector<intptr_t> external_references;
-    external_references.reserve(1);
-    external_references.push_back((intptr_t) &GlobalObject::Version);
+    auto external_references = createExtRef();
     V8Engine v8Engine(external_references);
     v8::StartupData data{nullptr, 0};
     v8::SnapshotCreator creator(v8Engine.isolate, external_references.data(), nullptr);
     {
         v8::HandleScope scope(v8Engine.isolate);
         v8::Local<v8::ObjectTemplate> global = v8::ObjectTemplate::New(v8Engine.isolate);
-//        global->SetAccessor(String::NewFromUtf8(v8Engine.isolate, "x").ToLocalChecked(), GlobalObject::XGetter,
-//                            GlobalObject::XSetter);
+        global->SetAccessor(String::NewFromUtf8(v8Engine.isolate, "x").ToLocalChecked(), GlobalObject::XGetter,
+                            GlobalObject::XSetter);
         printf("GlobalObject::Version point=%p\n", &GlobalObject::Version);
         Local<FunctionTemplate> fun = v8::FunctionTemplate::New(v8Engine.isolate, GlobalObject::Version);
         global->Set(v8Engine.isolate, "version", fun);
@@ -67,7 +65,7 @@ v8::StartupData V8Snapshot::makeSnapshot() {
             creator.SetDefaultContext(context);
         }
     }
-    data = creator.CreateBlob(v8::SnapshotCreator::FunctionCodeHandling::kClear);
+    data = creator.CreateBlob(v8::SnapshotCreator::FunctionCodeHandling::kKeep);
     // 立即从 snapshot 恢复 context
     restoreSnapshot(data, false);
     return data;
@@ -111,13 +109,11 @@ void V8Snapshot::restoreSnapshot(v8::StartupData &data, const bool createPlatfor
     createParams.array_buffer_allocator =
             v8::ArrayBuffer::Allocator::NewDefaultAllocator();
     createParams.snapshot_blob = &data;
-    std::vector<intptr_t> external_references;
-    external_references.reserve(1);
-    external_references.push_back((intptr_t) &GlobalObject::Version);
-    createParams.external_references = external_references.data();
+    createParams.external_references = createExtRef().data();
     v8::Isolate *isolate = v8::Isolate::New(createParams);
     {
         v8::HandleScope handle_scope(isolate);
+        v8::TryCatch tryCatch(isolate);
         // Create a new context.
         v8::Local<v8::Context> context = v8::Context::New(isolate);
 //        v8::Local<v8::Context> context = v8::Context::FromSnapshot(isolate, 0).ToLocalChecked();
@@ -126,15 +122,21 @@ void V8Snapshot::restoreSnapshot(v8::StartupData &data, const bool createPlatfor
         {
             v8::Local<v8::String> source =
                     v8::String::NewFromUtf8Literal(isolate,
-                                                   "typeof version === 'function'?version():'not found version()'");
+                                                   "(typeof version === 'function')? x + version():'not found version()'");
             // Compile the source code.
             v8::Local<v8::Script> script =
                     v8::Script::Compile(context, source).ToLocalChecked();
-            // Run the script to get the result.
-            v8::Local<v8::Value> result = script->Run(context).ToLocalChecked();
-            // Convert the result to an UTF8 string and print it.
-            v8::String::Utf8Value utf8(isolate, result);
-            printf("restore add() = %s\n", *utf8);
+            v8::MaybeLocal<v8::Value> localResult = script->Run(context);
+            if (tryCatch.HasCaught() || localResult.IsEmpty()) {
+                Local<String> msg = tryCatch.Message()->Get();
+                v8::String::Utf8Value msgVal(isolate, msg);
+                printf("HasCaught => %s\n", *msgVal);
+            } else {
+                v8::Local<v8::Value> result = localResult.ToLocalChecked();
+                // Convert the result to an UTF8 string and print it.
+                v8::String::Utf8Value utf8(isolate, result);
+                printf("restore add() = %s\n", *utf8);
+            }
         }
     }
     if (createPlatform) {
@@ -174,4 +176,13 @@ void V8Snapshot::readFile(v8::StartupData &data) {
     fclose(file);
     printf("readFile ## raw_size =%d, IsValid=%d, CanBeRehashed=%d, read_size=%d\n",
            data.raw_size, data.IsValid(), data.CanBeRehashed(), read_size);
+}
+
+std::vector<intptr_t> V8Snapshot::createExtRef() {
+    std::vector<intptr_t> external_references;
+    external_references.reserve(3);
+    external_references.push_back((intptr_t) &GlobalObject::Version);
+    external_references.push_back((intptr_t) &GlobalObject::XGetter);
+    external_references.push_back((intptr_t) &GlobalObject::XSetter);
+    return external_references;
 }
