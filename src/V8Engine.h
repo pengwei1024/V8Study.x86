@@ -28,6 +28,12 @@ public:
     bool runScript(v8::Local<v8::Context> context,
                    const std::string &js, v8::Local<v8::Value>& result) const;
 
+    /**
+     * print 输出 value 值
+     * @param value v8::Local<v8::Value>
+     */
+    void printValue(const v8::Local<v8::Value> &value);
+
 private:
     std::unique_ptr<v8::Platform> platform;
 };

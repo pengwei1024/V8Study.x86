@@ -12,21 +12,14 @@ int main(int argc, char *argv[]) {
     v8::HandleScope handle_scope(v8Engine.isolate);
     v8pp::context context(v8Engine.isolate, v8Engine.create_params.array_buffer_allocator);
     v8::TryCatch tryCatch(v8Engine.isolate);
-    result = context.run_script("'hello' + 123", "a.js");
+    result = context.run_file("../test/a.js");
     if (tryCatch.HasCaught()) {
         v8::Local<v8::String> msg = tryCatch.Message()->Get();
         v8::String::Utf8Value msgVal(v8Engine.isolate, msg);
         printf("HasCaught => %s\n", *msgVal);
+        return 0;
     }
-//    v8::Local<v8::Context> context = v8::Context::New(v8Engine.isolate);
-//    bool success = v8Engine.runScript(context, "console.log('###')", result);
-//    if (!success) {
-//        return 0;
-//    }
-//    printf("IsEmpty=%d, IsString=%d, \n", result.IsEmpty(), result->IsString());
-    v8::String::Utf8Value utf8(v8Engine.isolate, result);
-    printf("runScript result = %s\n", *utf8);
-
+    v8Engine.printValue(result);
 
 //    bool write = true;
 //    V8Snapshot v8Snapshot;

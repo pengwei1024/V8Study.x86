@@ -50,3 +50,10 @@ bool V8Engine::runScript(v8::Local<v8::Context> context,
     }
     return true;
 }
+
+void V8Engine::printValue(const v8::Local<v8::Value> &value) {
+    printf("IsEmpty=%d, IsString=%d, \n", value.IsEmpty(), value->IsString());
+    v8::String::Utf8Value utf8(isolate, value);
+    printf("runScript result = %s\n", *utf8);
+}
+
