@@ -12,7 +12,7 @@
 class V8Engine {
 public:
     V8Engine();
-    V8Engine(std::vector<intptr_t> external_references);
+    explicit V8Engine(std::vector<intptr_t> external_references);
 
     ~V8Engine();
 
@@ -25,7 +25,8 @@ public:
      * @param js js 脚本
      * @return 执行结果 v8::Value
      */
-    bool runScript(const std::string &js, v8::Local<v8::Value>& result) const;
+    bool runScript(v8::Local<v8::Context> context,
+                   const std::string &js, v8::Local<v8::Value>& result) const;
 
 private:
     std::unique_ptr<v8::Platform> platform;

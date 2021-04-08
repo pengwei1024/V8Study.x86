@@ -30,15 +30,23 @@ V8Engine::~V8Engine() {
     printf("~V8Engine\n");
 }
 
-bool V8Engine::runScript(const std::string &js, v8::Local<v8::Value>& result) const {
-    v8::Local<v8::Context> context = v8::Context::New(isolate);
+bool V8Engine::runScript(v8::Local<v8::Context> context,
+                         const std::string &js, v8::Local<v8::Value>& result) const {
+    v8::TryCatch tryCatch(isolate);
     v8::Context::Scope context_scope(context);
     {
         v8::Local<v8::String> source =
                 v8::String::NewFromUtf8(isolate, js.c_str()).ToLocalChecked();
         v8::Local<v8::Script> script =
                 v8::Script::Compile(context, source).ToLocalChecked();
-        result = script->Run(context).ToLocalChecked();
+        auto localResult = script->Run(context);
+        if (tryCatch.HasCaught() || localResult.IsEmpty()) {
+            v8::Local<v8::String> msg = tryCatch.Message()->Get();
+            v8::String::Utf8Value msgVal(isolate, msg);
+            printf("HasCaught => %s\n", *msgVal);
+            return false;
+        }
+        result = localResult.ToLocalChecked();
     }
     return true;
 }
