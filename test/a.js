@@ -1,1 +1,1 @@
-'##hello' + 123
+console.log('## from console.log', Array);'##hello' + 123

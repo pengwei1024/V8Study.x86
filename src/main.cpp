@@ -1,6 +1,7 @@
 #include "hello.hpp"
 #include "V8Snapshot.h"
 #include "V8Engine.h"
+#include "Console.h"
 #include <v8pp/context.hpp>
 
 int main(int argc, char *argv[]) {
@@ -11,6 +12,8 @@ int main(int argc, char *argv[]) {
     v8::Isolate::Scope isolate_scope(v8Engine.isolate);
     v8::HandleScope handle_scope(v8Engine.isolate);
     v8pp::context context(v8Engine.isolate, v8Engine.create_params.array_buffer_allocator);
+    auto console = Console::createModule(v8Engine.isolate);
+    context.set("console", console);
     v8::TryCatch tryCatch(v8Engine.isolate);
     result = context.run_file("../test/a.js");
     if (tryCatch.HasCaught()) {
