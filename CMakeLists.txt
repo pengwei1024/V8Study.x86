@@ -16,16 +16,19 @@ INCLUDE_DIRECTORIES(
         lib/
 )
 
-add_executable(V8Study_x86_ src/main.cpp src/V8Engine.cpp src/V8Snapshot.cpp src/GlobalObject.cpp src/Utils.hpp src/Console.cpp)
+
+add_executable(V8Study_x86_ src/main.cpp src/V8Engine.cpp src/V8Snapshot.cpp src/GlobalObject.cpp src/Utils.hpp src/Console.cpp
+        src/TimeOps.cpp
+        )
 
 MESSAGE(STATUS "SOURCE_DIR = ${PROJECT_SOURCE_DIR}.")
 
 find_library(zlib z)
-#是否启用 snapshot 功能 ON 开启 /  OFF 关闭
-#set(ENABLE_SNAPSHOT ON)
+#是否启用 monolith ON 开启 /  OFF 关闭
+#set(ENABLE_MONOLITH ON)
 
-if (ENABLE_SNAPSHOT)
-    MESSAGE(STATUS "### ENABLE_SNAPSHOT!!!")
+if (ENABLE_MONOLITH)
+    MESSAGE(STATUS "### ENABLE_MONOLITH!!!")
     target_link_libraries(
             V8Study_x86_
             ${zlib}
@@ -51,23 +54,18 @@ if (ENABLE_SNAPSHOT)
             ${PROJECT_SOURCE_DIR}/lib/v8pp/libv8pp.a
     )
 else ()
-    MESSAGE(STATUS "$$$ DISABLE_SNAPSHOT!!!")
+    MESSAGE(STATUS "$$$ DISABLE_MONOLITH!!!")
+    set(V8_DIR ${PROJECT_SOURCE_DIR}/lib/v8/platform/mac/libv8_monolith.a)
 #    优先读取根目录下的 libv8_monolith.a
     if (EXISTS "${PROJECT_SOURCE_DIR}/libv8_monolith.a")
-        target_link_libraries(
-                V8Study_x86_
-                ${zlib}
-                ${PROJECT_SOURCE_DIR}/lib/v8pp/libv8pp.a
-                ${PROJECT_SOURCE_DIR}/libv8_monolith.a
-        )
-    else()
-        target_link_libraries(
-                V8Study_x86_
-                ${zlib}
-                ${PROJECT_SOURCE_DIR}/lib/v8pp/libv8pp.a
-                ${PROJECT_SOURCE_DIR}/lib/v8/platform/mac/libv8_monolith.a
-        )
-    endif ()
+        set(V8_DIR ${PROJECT_SOURCE_DIR}/libv8_monolith.a)
+    endif()
+    target_link_libraries(
+            V8Study_x86_
+            ${zlib}
+            ${PROJECT_SOURCE_DIR}/lib/v8pp/libv8pp.a
+            ${V8_DIR}
+    )
 endif ()
 
 
