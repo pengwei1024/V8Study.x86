@@ -1,5 +1,6 @@
 #include <iostream>
 #include <v8pp/module.hpp>
+#include <v8pp/class.hpp>
 #include "v8.h"
 #include "libplatform/libplatform.h"
 
@@ -7,6 +8,15 @@
  * 官方简单的 V8 例子，执行字符串想加，并输出结果
  * @param argv
  */
+
+struct X
+{
+    X(int v, bool u) : var(v) {}
+    int var;
+    int get() const { return var; }
+    void set(int x) { var = x; }
+};
+
 extern void say_hello(char* argv[]) {
     // Initialize V8.
     v8::V8::InitializeICUDefaultLocation(argv[0]);
@@ -25,10 +35,22 @@ extern void say_hello(char* argv[]) {
         // Create a stack-allocated handle scope.
         v8::HandleScope handle_scope(isolate);
 
-
         v8::Local<v8::ObjectTemplate> global = v8::ObjectTemplate::New(isolate);
         v8pp::module myLib(isolate);
         myLib.set_const("PI", 3.1415);
+
+//        v8pp::class_<X> X_class(isolate);
+//        X_class
+//                // specify X constructor signature
+//                .ctor<int, bool>()
+//                        // bind variable
+//                .set("var", &X::var)
+//                        // bind function
+//                .set("fun", &X::set)
+//                        // bind read-only property
+//                .set("prop",  v8pp::property(&X::get));
+//        myLib.set("X", X_class);
+
         // Create a new context.
         v8::Local<v8::Context> context = v8::Context::New(isolate, nullptr, global);
 
